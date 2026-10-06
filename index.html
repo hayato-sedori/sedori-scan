@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.json">
+<title>せどりSCAN MVP</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6fa;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
+.app{max-width:430px;margin:auto;min-height:100vh;padding-bottom:90px}.head{padding:18px 16px;display:flex;justify-content:space-between;font-weight:900;font-size:21px}
+.card{background:#fff;margin:10px 14px;padding:17px;border-radius:20px;box-shadow:0 4px 18px #0000000a}.hero{background:#111827;color:#fff;text-align:center}.camera{width:100%;border-radius:16px;background:#000;min-height:280px;object-fit:cover}.frame{position:absolute;border:3px solid white;width:260px;height:150px;border-radius:18px;left:50%;top:50%;transform:translate(-50%,-50%)}.camwrap{position:relative}
+button{width:100%;border:0;border-radius:14px;padding:14px;margin-top:10px;background:#4f46e5;color:white;font-size:16px;font-weight:800}button.secondary{background:#eef2ff;color:#4338ca}
+input{width:100%;padding:13px;border:1px solid #dbe1ea;border-radius:12px;font-size:16px}.muted{font-size:11px;color:#6b7280}.title{font-weight:850;margin-bottom:10px}.product{display:flex;gap:12px;align-items:center}.emoji{width:64px;height:64px;border-radius:14px;background:#fff7ed;display:grid;place-items:center;font-size:30px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:#f8fafc;padding:12px;border-radius:13px}.k{font-size:11px;color:#6b7280}.v{font-size:20px;font-weight:900;margin-top:4px}.status{display:inline-block;padding:7px 11px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:850;font-size:12px}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100%);background:#fff;border-top:1px solid #e5e7eb;display:flex;height:70px}.nav button{margin:0;background:white;color:#6b7280;border-radius:0;font-size:11px}.nav button.active{color:#4f46e5}
+#result{display:none}.notice{padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:13px;font-size:12px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="head"><span>📦 せどりSCAN</span><span>🔔</span></div>
+
+<section id="scan">
+<div class="card hero">
+<h2>商品をスキャン</h2>
+<p style="font-size:12px;color:#cbd5e1">JANを読み取って商品情報を取得します</p>
+<div class="camwrap"><video id="video" class="camera" playsinline muted></video><div class="frame"></div></div>
+<button id="start">📷 カメラを起動</button>
+</div>
+<div class="card">
+<div class="title">⌨️ JANを手入力</div>
+<input id="jan" inputmode="numeric" placeholder="例：3017624010701">
+<button class="secondary" id="searchBtn">商品を検索</button>
+</div>
+</section>
+
+<section id="result">
+<div class="card">
+<div class="product"><div class="emoji">📦</div><div><div id="name" style="font-weight:850">検索中…</div><div id="brand" class="muted"></div><div id="code" class="muted"></div></div></div>
+</div>
+<div class="card">
+<div class="title">💰 利益計算</div>
+<div class="grid">
+<div class="metric"><div class="k">販売価格</div><div class="v">¥1,080</div></div>
+<div class="metric"><div class="k">仕入れ価格</div><div class="v">¥438</div></div>
+<div class="metric"><div class="k">手数料</div><div class="v">¥98</div></div>
+<div class="metric"><div class="k">送料</div><div class="v">¥210</div></div>
+</div>
+<div style="margin-top:12px;background:#111827;color:#fff;padding:15px;border-radius:15px"><div class="muted" style="color:#cbd5e1">見込み利益</div><div style="font-size:32px;font-weight:900">¥334</div><div style="font-size:12px">利益率 30.9% / ROI 76.3%</div></div>
+</div>
+<div class="card">
+<div class="status">🟢 仕入れおすすめ</div>
+<div style="font-size:28px;font-weight:900;margin-top:7px">87点</div>
+<div class="muted">AI仕入れスコア（MVPデモ）</div>
+</div>
+<div class="card">
+<div class="title">🏪 店舗価格</div>
+<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #eee"><b>店舗A</b><b>¥398</b></div>
+<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #eee"><b>店舗B</b><b>¥448</b></div>
+<div style="display:flex;justify-content:space-between;padding:11px 0"><b>店舗C</b><b>¥498</b></div>
+</div>
+<div class="card"><div class="notice">🔔 条件を満たした商品をおすすめアラートとして通知する機能は次の実装段階で接続します。</div></div>
+</section>
+
+<div class="nav"><button class="active" onclick="showScan()">📷<br>スキャン</button><button onclick="showResult()">📊<br>結果</button></div>
+</div>
+<script>
+let stream=null, reader=null, last="";
+const video=document.getElementById("video");
+const jan=document.getElementById("jan");
+function showScan(){document.getElementById("scan").style.display="block";document.getElementById("result").style.display="none"}
+function showResult(){if(last) document.getElementById("result").style.display="block";document.getElementById("scan").style.display=last?"none":"block"}
+async function search(code){
+ code=String(code).replace(/\D/g,""); if(!code)return;
+ last=code; jan.value=code;
+ document.getElementById("name").textContent="商品情報を取得中…";
+ document.getElementById("brand").textContent="";
+ document.getElementById("code").textContent="JAN: "+code;
+ document.getElementById("scan").style.display="none";document.getElementById("result").style.display="block";
+ try{
+   const r=await fetch("https://api.upcitemdb.com/prod/trial/lookup?upc="+encodeURIComponent(code),{headers:{Accept:"application/json"}});
+   if(!r.ok) throw new Error("API "+r.status);
+   const d=await r.json(); const item=d.items&&d.items[0];
+   if(item){
+     document.getElementById("name").textContent=item.title||"商品名不明";
+     document.getElementById("brand").textContent=item.brand||item.category||"";
+   }else document.getElementById("name").textContent="商品情報が見つかりませんでした";
+ }catch(e){
+   document.getElementById("name").textContent="商品検索に失敗しました";
+   document.getElementById("brand").textContent="通信状態またはAPI制限を確認してください";
+ }
+}
+document.getElementById("searchBtn").onclick=()=>search(jan.value);
+document.getElementById("start").onclick=async()=>{
+ try{
+   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+   video.srcObject=stream; await video.play();
+   if("BarcodeDetector" in window){
+     const formats=await BarcodeDetector.getSupportedFormats();
+     const wanted=formats.filter(x=>["ean_13","ean_8","upc_a","upc_e"].includes(x));
+     const detector=new BarcodeDetector({formats:wanted.length?wanted:formats});
+     const loop=async()=>{if(!stream)return;try{const b=await detector.detect(video);if(b.length){stop();search(b[0].rawValue);return}}catch(e){}requestAnimationFrame(loop)};loop();
+   }else{
+     alert("このブラウザでは標準バーコード検出に対応していません。まずJANを手入力してください。完成版では別方式のスキャナを追加します。");
+   }
+ }catch(e){alert("カメラを起動できませんでした。HTTPSとカメラ権限を確認してください。")}
+};
+function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
+</script>
+</body>
+</html>

@@ -66,46 +66,57 @@ input{width:100%;padding:13px;border:1px solid #dbe1ea;border-radius:12px;font-s
 <div class="nav"><button class="active" onclick="showScan()">📷<br>スキャン</button><button onclick="showResult()">📊<br>結果</button></div>
 </div>
 <script>
-let stream=null, reader=null, last="";
-const video=document.getElementById("video");
-const jan=document.getElementById("jan");
-function showScan(){document.getElementById("scan").style.display="block";document.getElementById("result").style.display="none"}
-function showResult(){if(last) document.getElementById("result").style.display="block";document.getElementById("scan").style.display=last?"none":"block"}
+const API_BASE = "https://api.upcitemdb.com/prod/trial/lookup";
+const CACHE_PREFIX = "sedoriScanProduct:";
+const MIN_LOOKUP_INTERVAL_MS = 10500;
+let stream=null,last="",lastLookupAt=0,lookupInProgress=false;
+const video=document.getElementById("video"), jan=document.getElementById("jan"), result=document.getElementById("result");
+function showScan(){document.getElementById("scan").style.display="block";result.style.display="none"}
+function showResult(){if(last)result.style.display="block";document.getElementById("scan").style.display=last?"none":"block"}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function normalizeJan(s){return String(s||"").replace(/\D/g,"")}
+function validJan(s){return /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(s)}
+function key(c){return CACHE_PREFIX+c}
+function loadCache(c){try{const x=JSON.parse(localStorage.getItem(key(c))||'null');return x?.item||null}catch(e){return null}}
+function saveCache(c,item){try{localStorage.setItem(key(c),JSON.stringify({savedAt:Date.now(),item}))}catch(e){}}
+function toast(t){const x=document.createElement('div');x.textContent=t;Object.assign(x.style,{position:'fixed',left:'50%',bottom:'86px',transform:'translateX(-50%)',background:'#111827',color:'#fff',padding:'11px 15px',borderRadius:'999px',zIndex:99,fontSize:'13px',fontWeight:800,maxWidth:'90%',textAlign:'center'});document.body.appendChild(x);setTimeout(()=>x.remove(),2200)}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function fetchTimeout(url,timeout=12000){const c=new AbortController(),t=setTimeout(()=>c.abort(),timeout);try{return await fetch(url,{headers:{Accept:'application/json'},signal:c.signal})}finally{clearTimeout(t)}}
 async function search(code){
- code=String(code).replace(/\D/g,""); if(!code)return;
- last=code; jan.value=code;
- document.getElementById("name").textContent="商品情報を取得中…";
- document.getElementById("brand").textContent="";
- document.getElementById("code").textContent="JAN: "+code;
- document.getElementById("scan").style.display="none";document.getElementById("result").style.display="block";
+ code=normalizeJan(code);if(!validJan(code)){toast('JANは8・12・13・14桁で入力してください');return}
+ if(lookupInProgress){toast('いま商品検索中です。少し待ってください');return}
+ last=code;jan.value=code;document.getElementById('scan').style.display='none';result.style.display='block';
+ result.innerHTML='<div class="card"><div class="title">🔎 商品情報</div><div class="notice">商品データを検索しています…<br>JAN：'+esc(code)+'</div></div>'+result.innerHTML;
+ result.scrollIntoView({behavior:'smooth'});
+ const cached=loadCache(code);if(cached){renderProduct(cached,code,true);toast('保存済みの商品データを表示しました');return}
+ const waitMs=Math.max(0,MIN_LOOKUP_INTERVAL_MS-(Date.now()-lastLookupAt));
+ if(waitMs){toast('API連続アクセスを避けるため少し待ちます');await wait(waitMs)}
+ lastLookupAt=Date.now();lookupInProgress=true;
  try{
-   const r=await fetch("https://api.upcitemdb.com/prod/trial/lookup?upc="+encodeURIComponent(code),{headers:{Accept:"application/json"}});
-   if(!r.ok) throw new Error("API "+r.status);
-   const d=await r.json(); const item=d.items&&d.items[0];
-   if(item){
-     document.getElementById("name").textContent=item.title||"商品名不明";
-     document.getElementById("brand").textContent=item.brand||item.category||"";
-   }else document.getElementById("name").textContent="商品情報が見つかりませんでした";
- }catch(e){
-   document.getElementById("name").textContent="商品検索に失敗しました";
-   document.getElementById("brand").textContent="通信状態またはAPI制限を確認してください";
- }
-}
-document.getElementById("searchBtn").onclick=()=>search(jan.value);
-document.getElementById("start").onclick=async()=>{
- try{
-   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
-   video.srcObject=stream; await video.play();
-   if("BarcodeDetector" in window){
-     const formats=await BarcodeDetector.getSupportedFormats();
-     const wanted=formats.filter(x=>["ean_13","ean_8","upc_a","upc_e"].includes(x));
-     const detector=new BarcodeDetector({formats:wanted.length?wanted:formats});
-     const loop=async()=>{if(!stream)return;try{const b=await detector.detect(video);if(b.length){stop();search(b[0].rawValue);return}}catch(e){}requestAnimationFrame(loop)};loop();
-   }else{
-     alert("このブラウザでは標準バーコード検出に対応していません。まずJANを手入力してください。完成版では別方式のスキャナを追加します。");
+   const url=API_BASE+'?upc='+encodeURIComponent(code);let r=await fetchTimeout(url);
+   if(r.status===429){
+     let sec=parseInt(r.headers.get('Retry-After')||'10',10);if(!Number.isFinite(sec))sec=10;sec=Math.min(Math.max(sec,5),30);
+     renderMessage('⏳ APIアクセス制限','約'+sec+'秒後に1回だけ自動再試行します。','JAN：'+code);await wait(sec*1000);lastLookupAt=Date.now();r=await fetchTimeout(url)
    }
- }catch(e){alert("カメラを起動できませんでした。HTTPSとカメラ権限を確認してください。")}
-};
+   const ct=r.headers.get('content-type')||'';if(!ct.includes('application/json'))throw new Error('NON_JSON');
+   const d=await r.json();
+   if(r.ok&&Array.isArray(d.items)&&d.items.length){saveCache(code,d.items[0]);renderProduct(d.items[0],code,false)}
+   else if(r.status===404||d.code==='NOT_FOUND')renderNotFound(code);
+   else if(r.status===429||['EXCEED_LIMIT','TOO_FAST'].includes(d.code))renderMessage('⚠️ APIアクセス制限','少し時間を空けてから再検索してください。','JAN：'+code);
+   else renderMessage('⚠️ 商品APIエラー','API側で一時的なエラーが発生しました。','JAN：'+code+' / HTTP '+r.status+' / '+(d.code||'UNKNOWN'))
+ }catch(e){renderMessage('⚠️ 商品検索に接続できませんでした',e.name==='AbortError'?'通信がタイムアウトしました。':'通信またはブラウザ側の接続に失敗しました。','JAN：'+code+'（JANの読み取り自体は成功）')}
+ finally{lookupInProgress=false}
+}
+function renderProduct(item,code,cached){
+ const title=item.title||'商品名未登録',brand=item.brand||'—',cat=item.category||'—',img=item.images?.[0]||'',ean=item.ean||item.gtin||code;
+ document.getElementById('name').textContent=title;document.getElementById('brand').textContent=(brand==='—'?cat:brand);document.getElementById('code').textContent='JAN: '+ean;
+ if(img){const card=document.querySelector('#result .product');if(card){const old=card.querySelector('.emoji');if(old){const im=document.createElement('img');im.className='productImg';im.src=img;im.alt='';old.replaceWith(im)}}}
+ const n=document.querySelector('#result .notice');if(n)n.textContent='カテゴリ：'+cat+(cached?' ／ 端末保存データ':' ／ API取得成功');
+}
+function renderNotFound(code){renderMessage('✓ JANは正常に読み取れました','商品データベースに登録がない可能性があります。通信エラーとは限りません。','JAN：'+code)}
+function renderMessage(title,msg,sub){document.getElementById('name').textContent=title;document.getElementById('brand').textContent=msg;document.getElementById('code').textContent=sub}
+document.getElementById('searchBtn').onclick=()=>search(jan.value);
+document.getElementById('start').onclick=async()=>{try{stop();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});video.srcObject=stream;await video.play();if('BarcodeDetector'in window){const f=await BarcodeDetector.getSupportedFormats(),w=f.filter(x=>['ean_13','ean_8','upc_a','upc_e'].includes(x));if(w.length){const d=new BarcodeDetector({formats:w});const loop=async()=>{if(!stream)return;try{const b=await d.detect(video);if(b.length){const c=b[0].rawValue;stop();search(c);return}}catch(e){}requestAnimationFrame(loop)};loop()}else toast('対応バーコード形式がありません。JANを手入力してください')}else toast('このブラウザでは標準バーコード検出に未対応です。JANを手入力してください')}catch(e){toast('カメラ権限またはHTTPSを確認してください')}};
 function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
 </script>
 </body>

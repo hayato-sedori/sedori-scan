@@ -5,119 +5,381 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <link rel="manifest" href="manifest.json">
-<title>せどりSCAN MVP</title>
+<title>せどりSCAN</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4f6fa;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
-.app{max-width:430px;margin:auto;min-height:100vh;padding-bottom:90px}.head{padding:18px 16px;display:flex;justify-content:space-between;font-weight:900;font-size:21px}
-.card{background:#fff;margin:10px 14px;padding:17px;border-radius:20px;box-shadow:0 4px 18px #0000000a}.hero{background:#111827;color:#fff;text-align:center}.camera{width:100%;border-radius:16px;background:#000;min-height:280px;object-fit:cover}.frame{position:absolute;border:3px solid white;width:260px;height:150px;border-radius:18px;left:50%;top:50%;transform:translate(-50%,-50%)}.camwrap{position:relative}
-button{width:100%;border:0;border-radius:14px;padding:14px;margin-top:10px;background:#4f46e5;color:white;font-size:16px;font-weight:800}button.secondary{background:#eef2ff;color:#4338ca}
-input{width:100%;padding:13px;border:1px solid #dbe1ea;border-radius:12px;font-size:16px}.muted{font-size:11px;color:#6b7280}.title{font-weight:850;margin-bottom:10px}.product{display:flex;gap:12px;align-items:center}.emoji{width:64px;height:64px;border-radius:14px;background:#fff7ed;display:grid;place-items:center;font-size:30px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:#f8fafc;padding:12px;border-radius:13px}.k{font-size:11px;color:#6b7280}.v{font-size:20px;font-weight:900;margin-top:4px}.status{display:inline-block;padding:7px 11px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:850;font-size:12px}
-.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100%);background:#fff;border-top:1px solid #e5e7eb;display:flex;height:70px}.nav button{margin:0;background:white;color:#6b7280;border-radius:0;font-size:11px}.nav button.active{color:#4f46e5}
-#result{display:none}.notice{padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:13px;font-size:12px;line-height:1.5}
+*{box-sizing:border-box}
+body{margin:0;background:#f4f6fa;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
+.app{max-width:430px;margin:auto;min-height:100vh;padding-bottom:90px}
+.head{padding:18px 16px;display:flex;justify-content:space-between;font-weight:900;font-size:21px}
+.card{background:#fff;margin:10px 14px;padding:17px;border-radius:20px;box-shadow:0 4px 18px #0000000a}
+.hero{background:#111827;color:#fff;text-align:center}
+.camera{width:100%;border-radius:16px;background:#000;min-height:260px;max-height:380px;object-fit:cover}
+.camwrap{position:relative}
+.frame{pointer-events:none;position:absolute;border:3px solid white;width:min(260px,75%);height:120px;border-radius:16px;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 0 999px #0002}
+button{width:100%;border:0;border-radius:14px;padding:14px;margin-top:10px;background:#4f46e5;color:white;font-size:16px;font-weight:800}
+button.secondary{background:#eef2ff;color:#4338ca}
+button:disabled{opacity:.5}
+input{width:100%;padding:13px;border:1px solid #dbe1ea;border-radius:12px;font-size:16px;background:#fff;color:#111827}
+label{display:block;font-size:12px;color:#6b7280;margin:0 0 6px}
+.muted{font-size:12px;color:#6b7280;line-height:1.5}
+.title{font-weight:850;margin-bottom:10px}
+.product{display:flex;gap:12px;align-items:center}
+.emoji{width:64px;height:64px;flex:0 0 64px;border-radius:14px;background:#fff7ed;display:grid;place-items:center;font-size:30px}
+.productImg{width:64px;height:64px;object-fit:contain;border-radius:14px;background:#fff7ed}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{background:#f8fafc;padding:10px;border-radius:13px;min-width:0}
+.field input{padding:10px;font-size:18px;font-weight:800}
+.metric{background:#f8fafc;padding:12px;border-radius:13px}
+.k{font-size:11px;color:#6b7280}
+.v{font-size:20px;font-weight:900;margin-top:4px}
+.status{display:inline-block;padding:7px 11px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:850;font-size:12px}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100%);background:#fff;border-top:1px solid #e5e7eb;display:flex;height:70px;z-index:10}
+.nav button{margin:0;background:white;color:#6b7280;border-radius:0;font-size:12px}
+.nav button.active{color:#4f46e5}
+#result{display:none}
+.notice{padding:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:13px;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+.notice.error{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+.notice.ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+.profitbox{margin-top:12px;background:#111827;color:#fff;padding:15px;border-radius:15px}
+.profitbox .muted{color:#cbd5e1}
+.profitvalue{font-size:32px;font-weight:900;margin:3px 0}
+.smallbtn{font-size:13px;padding:11px}
 </style>
+<!-- ZXing browser decoder: fallback for browsers without BarcodeDetector (including many iPhone Safari versions). -->
+<script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js"></script>
 </head>
 <body>
 <div class="app">
-<div class="head"><span>📦 せどりSCAN</span><span>🔔</span></div>
+  <div class="head"><span>📦 せどりSCAN</span><span aria-label="通知">🔔</span></div>
 
-<section id="scan">
-<div class="card hero">
-<h2>商品をスキャン</h2>
-<p style="font-size:12px;color:#cbd5e1">JANを読み取って商品情報を取得します</p>
-<div class="camwrap"><video id="video" class="camera" playsinline muted></video><div class="frame"></div></div>
-<button id="start">📷 カメラを起動</button>
-</div>
-<div class="card">
-<div class="title">⌨️ JANを手入力</div>
-<input id="jan" inputmode="numeric" placeholder="例：3017624010701">
-<button class="secondary" id="searchBtn">商品を検索</button>
-</div>
-</section>
+  <section id="scan">
+    <div class="card hero">
+      <h2>商品をスキャン</h2>
+      <p style="font-size:12px;color:#cbd5e1">JANを読み取って商品情報を検索します</p>
+      <div class="camwrap"><video id="video" class="camera" playsinline muted></video><div class="frame"></div></div>
+      <button id="start">📷 カメラを起動</button>
+      <button class="secondary" id="stopCamera" type="button">カメラを停止</button>
+      <p id="cameraHelp" class="muted" style="color:#cbd5e1">バーコード全体を枠に入れてください。読み取れない場合はJANを手入力できます。</p>
+    </div>
+    <div class="card">
+      <div class="title">⌨️ JANを手入力</div>
+      <input id="jan" inputmode="numeric" autocomplete="off" placeholder="例：4901777237896" maxlength="14">
+      <button class="secondary" id="searchBtn">商品を検索</button>
+    </div>
+  </section>
 
-<section id="result">
-<div class="card">
-<div class="product"><div class="emoji">📦</div><div><div id="name" style="font-weight:850">検索中…</div><div id="brand" class="muted"></div><div id="code" class="muted"></div></div></div>
-</div>
-<div class="card">
-<div class="title">💰 利益計算</div>
-<div class="grid">
-<div class="metric"><div class="k">販売価格</div><div class="v">¥1,080</div></div>
-<div class="metric"><div class="k">仕入れ価格</div><div class="v">¥438</div></div>
-<div class="metric"><div class="k">手数料</div><div class="v">¥98</div></div>
-<div class="metric"><div class="k">送料</div><div class="v">¥210</div></div>
-</div>
-<div style="margin-top:12px;background:#111827;color:#fff;padding:15px;border-radius:15px"><div class="muted" style="color:#cbd5e1">見込み利益</div><div style="font-size:32px;font-weight:900">¥334</div><div style="font-size:12px">利益率 30.9% / ROI 76.3%</div></div>
-</div>
-<div class="card">
-<div class="status">🟢 仕入れおすすめ</div>
-<div style="font-size:28px;font-weight:900;margin-top:7px">87点</div>
-<div class="muted">AI仕入れスコア（MVPデモ）</div>
-</div>
-<div class="card">
-<div class="title">🏪 店舗価格</div>
-<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #eee"><b>店舗A</b><b>¥398</b></div>
-<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #eee"><b>店舗B</b><b>¥448</b></div>
-<div style="display:flex;justify-content:space-between;padding:11px 0"><b>店舗C</b><b>¥498</b></div>
-</div>
-<div class="card"><div class="notice">🔔 条件を満たした商品をおすすめアラートとして通知する機能は次の実装段階で接続します。</div></div>
-</section>
+  <section id="result">
+    <div class="card">
+      <div class="title">🔎 商品情報</div>
+      <div id="lookupStatus" class="notice">JANコードを確認しています…</div>
+      <div class="product" style="margin-top:13px">
+        <div class="emoji" id="productVisual">📦</div>
+        <div style="min-width:0">
+          <div id="name" style="font-weight:850;overflow-wrap:anywhere">商品情報はまだありません</div>
+          <div id="brand" class="muted"></div>
+          <div id="code" class="muted"></div>
+        </div>
+      </div>
+      <button class="secondary smallbtn" id="backToScan">別の商品を検索</button>
+    </div>
 
-<div class="nav"><button class="active" onclick="showScan()">📷<br>スキャン</button><button onclick="showResult()">📊<br>結果</button></div>
+    <div class="card">
+      <div class="title">💰 利益計算</div>
+      <p class="muted">金額を入力すると利益を自動計算します。商品検索結果から価格を取得できない場合も、手動で計算できます。</p>
+      <div class="grid">
+        <div class="field"><label for="salePrice">販売価格（円）</label><input id="salePrice" type="number" inputmode="decimal" min="0" step="1" placeholder="例：1080"></div>
+        <div class="field"><label for="buyPrice">仕入れ価格（円）</label><input id="buyPrice" type="number" inputmode="decimal" min="0" step="1" placeholder="例：438"></div>
+        <div class="field"><label for="fee">販売手数料（円）</label><input id="fee" type="number" inputmode="decimal" min="0" step="1" placeholder="例：108"></div>
+        <div class="field"><label for="shipping">送料・その他（円）</label><input id="shipping" type="number" inputmode="decimal" min="0" step="1" placeholder="例：210"></div>
+      </div>
+      <div class="profitbox">
+        <div class="muted">見込み利益（入力額から計算）</div>
+        <div class="profitvalue" id="profit">—</div>
+        <div id="profitDetails" style="font-size:12px;color:#e5e7eb">4項目を入力すると利益率・ROIを表示します</div>
+      </div>
+      <button class="secondary smallbtn" id="clearPrices">金額をクリア</button>
+    </div>
+
+    <div class="card">
+      <div class="notice">店舗ごとの実売価格、在庫、AI仕入れスコアはまだ接続されていません。この画面では架空の価格や評価を表示しません。</div>
+    </div>
+  </section>
+
+  <div class="nav">
+    <button id="navScan" class="active" type="button">📷<br>スキャン</button>
+    <button id="navResult" type="button">📊<br>結果</button>
+  </div>
 </div>
 <script>
-const API_BASE = "https://api.upcitemdb.com/prod/trial/lookup";
-const CACHE_PREFIX = "sedoriScanProduct:";
-const MIN_LOOKUP_INTERVAL_MS = 10500;
-let stream=null,last="",lastLookupAt=0,lookupInProgress=false;
-const video=document.getElementById("video"), jan=document.getElementById("jan"), result=document.getElementById("result");
-function showScan(){document.getElementById("scan").style.display="block";result.style.display="none"}
-function showResult(){if(last)result.style.display="block";document.getElementById("scan").style.display=last?"none":"block"}
-function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function normalizeJan(s){return String(s||"").replace(/\D/g,"")}
-function validJan(s){return /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(s)}
-function key(c){return CACHE_PREFIX+c}
-function loadCache(c){try{const x=JSON.parse(localStorage.getItem(key(c))||'null');return x?.item||null}catch(e){return null}}
-function saveCache(c,item){try{localStorage.setItem(key(c),JSON.stringify({savedAt:Date.now(),item}))}catch(e){}}
-function toast(t){const x=document.createElement('div');x.textContent=t;Object.assign(x.style,{position:'fixed',left:'50%',bottom:'86px',transform:'translateX(-50%)',background:'#111827',color:'#fff',padding:'11px 15px',borderRadius:'999px',zIndex:99,fontSize:'13px',fontWeight:800,maxWidth:'90%',textAlign:'center'});document.body.appendChild(x);setTimeout(()=>x.remove(),2200)}
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
-async function fetchTimeout(url,timeout=12000){const c=new AbortController(),t=setTimeout(()=>c.abort(),timeout);try{return await fetch(url,{headers:{Accept:'application/json'},signal:c.signal})}finally{clearTimeout(t)}}
-async function search(code){
- code=normalizeJan(code);if(!validJan(code)){toast('JANは8・12・13・14桁で入力してください');return}
- if(lookupInProgress){toast('いま商品検索中です。少し待ってください');return}
- last=code;jan.value=code;document.getElementById('scan').style.display='none';result.style.display='block';
- result.innerHTML='<div class="card"><div class="title">🔎 商品情報</div><div class="notice">商品データを検索しています…<br>JAN：'+esc(code)+'</div></div>'+result.innerHTML;
- result.scrollIntoView({behavior:'smooth'});
- const cached=loadCache(code);if(cached){renderProduct(cached,code,true);toast('保存済みの商品データを表示しました');return}
- const waitMs=Math.max(0,MIN_LOOKUP_INTERVAL_MS-(Date.now()-lastLookupAt));
- if(waitMs){toast('API連続アクセスを避けるため少し待ちます');await wait(waitMs)}
- lastLookupAt=Date.now();lookupInProgress=true;
- try{
-   const url=API_BASE+'?upc='+encodeURIComponent(code);let r=await fetchTimeout(url);
-   if(r.status===429){
-     let sec=parseInt(r.headers.get('Retry-After')||'10',10);if(!Number.isFinite(sec))sec=10;sec=Math.min(Math.max(sec,5),30);
-     renderMessage('⏳ APIアクセス制限','約'+sec+'秒後に1回だけ自動再試行します。','JAN：'+code);await wait(sec*1000);lastLookupAt=Date.now();r=await fetchTimeout(url)
-   }
-   const ct=r.headers.get('content-type')||'';if(!ct.includes('application/json'))throw new Error('NON_JSON');
-   const d=await r.json();
-   if(r.ok&&Array.isArray(d.items)&&d.items.length){saveCache(code,d.items[0]);renderProduct(d.items[0],code,false)}
-   else if(r.status===404||d.code==='NOT_FOUND')renderNotFound(code);
-   else if(r.status===429||['EXCEED_LIMIT','TOO_FAST'].includes(d.code))renderMessage('⚠️ APIアクセス制限','少し時間を空けてから再検索してください。','JAN：'+code);
-   else renderMessage('⚠️ 商品APIエラー','API側で一時的なエラーが発生しました。','JAN：'+code+' / HTTP '+r.status+' / '+(d.code||'UNKNOWN'))
- }catch(e){renderMessage('⚠️ 商品検索に接続できませんでした',e.name==='AbortError'?'通信がタイムアウトしました。':'通信またはブラウザ側の接続に失敗しました。','JAN：'+code+'（JANの読み取り自体は成功）')}
- finally{lookupInProgress=false}
+'use strict';
+const API_BASE = 'https://api.upcitemdb.com/prod/trial/lookup';
+const CACHE_PREFIX = 'sedoriScanProduct:v2:';
+const MIN_LOOKUP_INTERVAL_MS = 10500; // Free plan's sustainable request interval
+let stream = null;
+let zxingControls = null;
+let zxingReader = null;
+let lastCode = '';
+let lastLookupAt = 0;
+let lookupInProgress = false;
+let cameraStarting = false;
+
+const video = document.getElementById('video');
+const janInput = document.getElementById('jan');
+const resultSection = document.getElementById('result');
+const scanSection = document.getElementById('scan');
+
+function showScan(){
+  scanSection.style.display = 'block';
+  resultSection.style.display = 'none';
+  document.getElementById('navScan').classList.add('active');
+  document.getElementById('navResult').classList.remove('active');
+}
+function showResult(){
+  if (!lastCode) { toast('先にJANコードを検索してください'); return; }
+  scanSection.style.display = 'none';
+  resultSection.style.display = 'block';
+  document.getElementById('navScan').classList.remove('active');
+  document.getElementById('navResult').classList.add('active');
+}
+function esc(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+}
+function normalizeJan(value){ return String(value || '').replace(/\D/g,''); }
+function validJan(value){ return /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(value); }
+function cacheKey(code){ return CACHE_PREFIX + code; }
+function loadCache(code){
+  try { const entry = JSON.parse(localStorage.getItem(cacheKey(code)) || 'null'); return entry?.item || null; }
+  catch (_) { return null; }
+}
+function saveCache(code,item){
+  try { localStorage.setItem(cacheKey(code), JSON.stringify({savedAt:Date.now(),item})); }
+  catch (_) { /* Private browsing or storage restrictions: continue without cache. */ }
+}
+function toast(message){
+  const node = document.createElement('div');
+  node.textContent = message;
+  Object.assign(node.style,{position:'fixed',left:'50%',bottom:'86px',transform:'translateX(-50%)',background:'#111827',color:'#fff',padding:'11px 15px',borderRadius:'999px',zIndex:99,fontSize:'13px',fontWeight:800,maxWidth:'90%',textAlign:'center'});
+  document.body.appendChild(node);
+  window.setTimeout(()=>node.remove(),2600);
+}
+const wait = ms => new Promise(resolve => window.setTimeout(resolve,ms));
+async function fetchTimeout(url, timeoutMs=15000){
+  const controller = new AbortController();
+  const timer = window.setTimeout(()=>controller.abort(),timeoutMs);
+  try { return await fetch(url,{method:'GET',headers:{Accept:'application/json'},signal:controller.signal,mode:'cors'}); }
+  finally { window.clearTimeout(timer); }
+}
+function setLookupStatus(message,type='notice'){
+  const box = document.getElementById('lookupStatus');
+  box.className = 'notice' + (type === 'error' ? ' error' : type === 'ok' ? ' ok' : '');
+  box.textContent = message;
+}
+function resetProductDisplay(code){
+  document.getElementById('name').textContent = '検索中…';
+  document.getElementById('brand').textContent = '';
+  document.getElementById('code').textContent = 'JAN：' + code;
+  document.getElementById('productVisual').textContent = '📦';
+  setLookupStatus('商品データを検索しています…（JAN：' + code + '）');
 }
 function renderProduct(item,code,cached){
- const title=item.title||'商品名未登録',brand=item.brand||'—',cat=item.category||'—',img=item.images?.[0]||'',ean=item.ean||item.gtin||code;
- document.getElementById('name').textContent=title;document.getElementById('brand').textContent=(brand==='—'?cat:brand);document.getElementById('code').textContent='JAN: '+ean;
- if(img){const card=document.querySelector('#result .product');if(card){const old=card.querySelector('.emoji');if(old){const im=document.createElement('img');im.className='productImg';im.src=img;im.alt='';old.replaceWith(im)}}}
- const n=document.querySelector('#result .notice');if(n)n.textContent='カテゴリ：'+cat+(cached?' ／ 端末保存データ':' ／ API取得成功');
+  const title = item.title || '商品名未登録';
+  const brand = item.brand || item.category || 'メーカー情報なし';
+  const category = item.category || 'カテゴリ情報なし';
+  const imageUrl = Array.isArray(item.images) ? item.images[0] : '';
+  document.getElementById('name').textContent = title;
+  document.getElementById('brand').textContent = brand;
+  document.getElementById('code').textContent = 'JAN：' + (item.ean || item.gtin || code);
+  const visual = document.getElementById('productVisual');
+  visual.replaceChildren();
+  if (imageUrl && /^https:\/\//i.test(imageUrl)) {
+    const img = document.createElement('img');
+    img.className = 'productImg'; img.src = imageUrl; img.alt = '商品画像';
+    img.onerror = () => { visual.replaceChildren(document.createTextNode('📦')); };
+    visual.appendChild(img);
+  } else {
+    visual.textContent = '📦'; visual.className = 'emoji';
+  }
+  setLookupStatus('商品情報を取得しました。カテゴリ：' + category + (cached ? '（端末保存データ）' : '（API取得）'),'ok');
 }
-function renderNotFound(code){renderMessage('✓ JANは正常に読み取れました','商品データベースに登録がない可能性があります。通信エラーとは限りません。','JAN：'+code)}
-function renderMessage(title,msg,sub){document.getElementById('name').textContent=title;document.getElementById('brand').textContent=msg;document.getElementById('code').textContent=sub}
-document.getElementById('searchBtn').onclick=()=>search(jan.value);
-document.getElementById('start').onclick=async()=>{try{stop();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});video.srcObject=stream;await video.play();if('BarcodeDetector'in window){const f=await BarcodeDetector.getSupportedFormats(),w=f.filter(x=>['ean_13','ean_8','upc_a','upc_e'].includes(x));if(w.length){const d=new BarcodeDetector({formats:w});const loop=async()=>{if(!stream)return;try{const b=await d.detect(video);if(b.length){const c=b[0].rawValue;stop();search(c);return}}catch(e){}requestAnimationFrame(loop)};loop()}else toast('対応バーコード形式がありません。JANを手入力してください')}else toast('このブラウザでは標準バーコード検出に未対応です。JANを手入力してください')}catch(e){toast('カメラ権限またはHTTPSを確認してください')}};
-function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
+function renderNotFound(code){
+  document.getElementById('name').textContent = '商品情報は見つかりませんでした';
+  document.getElementById('brand').textContent = 'JANコードは受け取りましたが、検索先のデータベースに登録がない可能性があります。';
+  document.getElementById('code').textContent = 'JAN：' + code;
+  document.getElementById('productVisual').textContent = '🔎';
+  setLookupStatus('検索先から商品データが0件で返されました。通信成功・商品未登録の状態です。別の商品JANでも試してください。');
+}
+function renderApiError(message,code){
+  document.getElementById('name').textContent = '商品情報を取得できませんでした';
+  document.getElementById('brand').textContent = message;
+  document.getElementById('code').textContent = 'JAN：' + code;
+  document.getElementById('productVisual').textContent = '⚠️';
+  setLookupStatus(message,'error');
+}
+async function searchProduct(rawCode){
+  const code = normalizeJan(rawCode);
+  if (!validJan(code)) { toast('JANは8・12・13・14桁で入力してください'); return; }
+  if (lookupInProgress) { toast('商品検索中です。少し待ってください'); return; }
+  lastCode = code;
+  janInput.value = code;
+  showResult();
+  resetProductDisplay(code);
+  resultSection.scrollIntoView({behavior:'smooth',block:'start'});
+
+  const cached = loadCache(code);
+  if (cached) { renderProduct(cached,code,true); return; }
+
+  const waitMs = Math.max(0,MIN_LOOKUP_INTERVAL_MS - (Date.now() - lastLookupAt));
+  if (waitMs > 0) {
+    setLookupStatus('無料APIの連続アクセスを避けるため、少し待ってから検索します…');
+    await wait(waitMs);
+  }
+  lastLookupAt = Date.now();
+  lookupInProgress = true;
+  try {
+    const response = await fetchTimeout(API_BASE + '?upc=' + encodeURIComponent(code));
+    let data;
+    try { data = await response.json(); }
+    catch (_) { throw new Error('INVALID_RESPONSE'); }
+
+    if (response.status === 429 || data.code === 'EXCEED_LIMIT' || data.code === 'TOO_FAST') {
+      renderApiError('APIの利用回数またはアクセス間隔の上限に達しました。しばらく時間を空けて再検索してください。',code);
+      return;
+    }
+    if (response.status === 404 || data.code === 'NOT_FOUND' || (Array.isArray(data.items) && data.items.length === 0) || data.total === 0) {
+      renderNotFound(code);
+      return;
+    }
+    if (!response.ok) {
+      renderApiError('商品検索APIでエラーが返されました（HTTP ' + response.status + '）。時間を空けて再度お試しください。',code);
+      return;
+    }
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      saveCache(code,data.items[0]);
+      renderProduct(data.items[0],code,false);
+      return;
+    }
+    renderApiError('APIから想定外の応答が返されました。',code);
+  } catch (error) {
+    const message = error?.name === 'AbortError'
+      ? '商品検索がタイムアウトしました。通信環境を確認して再度お試しください。'
+      : error?.message === 'INVALID_RESPONSE'
+        ? '商品検索先からJSON形式ではない応答が返されました。'
+        : 'ブラウザから商品検索先へ接続できませんでした。通信環境、または検索先のブラウザ接続制限（CORS）を確認する必要があります。';
+    renderApiError(message,code);
+  } finally {
+    lookupInProgress = false;
+  }
+}
+
+async function startCamera(){
+  if (cameraStarting) return;
+  cameraStarting = true;
+  stopCamera();
+  document.getElementById('start').disabled = true;
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error('CAMERA_UNAVAILABLE');
+
+    // Prefer the native detector when supported; otherwise use ZXing for Safari.
+    if ('BarcodeDetector' in window) {
+      let supported = [];
+      try { supported = await window.BarcodeDetector.getSupportedFormats(); } catch (_) {}
+      const formats = supported.filter(format => ['ean_13','ean_8','upc_a','upc_e'].includes(format));
+      if (formats.length) {
+        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+        video.srcObject = stream;
+        await video.play();
+        const detector = new window.BarcodeDetector({formats});
+        const scanFrame = async () => {
+          if (!stream) return;
+          try {
+            const codes = await detector.detect(video);
+            if (codes.length) {
+              const found = normalizeJan(codes[0].rawValue);
+              if (validJan(found)) { stopCamera(); searchProduct(found); return; }
+            }
+          } catch (_) { /* Keep scanning the next frame. */ }
+          if (stream) window.requestAnimationFrame(scanFrame);
+        };
+        scanFrame();
+        toast('カメラを起動しました。バーコードを枠に合わせてください');
+        return;
+      }
+    }
+
+    if (window.ZXingBrowser?.BrowserMultiFormatReader) {
+      zxingReader = new window.ZXingBrowser.BrowserMultiFormatReader();
+      zxingControls = await zxingReader.decodeFromConstraints(
+        {video:{facingMode:{ideal:'environment'}},audio:false},
+        video,
+        (scanResult, scanError) => {
+          if (!scanResult) return;
+          const found = normalizeJan(typeof scanResult.getText === 'function' ? scanResult.getText() : scanResult.text);
+          if (validJan(found)) { stopCamera(); searchProduct(found); }
+        }
+      );
+      toast('バーコード読み取りを開始しました');
+      return;
+    }
+    throw new Error('ZXING_UNAVAILABLE');
+  } catch (error) {
+    stopCamera();
+    if (error?.name === 'NotAllowedError') toast('カメラの使用を許可してください');
+    else if (error?.name === 'NotFoundError') toast('カメラが見つかりませんでした');
+    else if (error?.message === 'ZXING_UNAVAILABLE') toast('読み取りライブラリを読み込めません。JANを手入力してください');
+    else toast('カメラを起動できません。Safariのカメラ許可と通信環境を確認してください');
+  } finally {
+    cameraStarting = false;
+    document.getElementById('start').disabled = false;
+  }
+}
+function stopCamera(){
+  if (zxingControls) { try { zxingControls.stop(); } catch (_) {} zxingControls = null; }
+  if (zxingReader) { try { zxingReader.reset(); } catch (_) {} zxingReader = null; }
+  if (stream) { stream.getTracks().forEach(track=>track.stop()); stream = null; }
+  try { video.pause(); } catch (_) {}
+  video.srcObject = null;
+}
+function yen(value){ return '¥' + Math.round(value).toLocaleString('ja-JP'); }
+function numericValue(id){
+  const raw = document.getElementById(id).value;
+  if (raw === '') return null;
+  const number = Number(raw);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+function calculateProfit(){
+  const sale = numericValue('salePrice');
+  const cost = numericValue('buyPrice');
+  const fee = numericValue('fee');
+  const shipping = numericValue('shipping');
+  const profitNode = document.getElementById('profit');
+  const detailsNode = document.getElementById('profitDetails');
+  if ([sale,cost,fee,shipping].some(value=>value === null)) {
+    profitNode.textContent = '—';
+    detailsNode.textContent = '販売価格・仕入れ価格・手数料・送料をすべて入力してください';
+    return;
+  }
+  const profit = sale - cost - fee - shipping;
+  const margin = sale > 0 ? (profit / sale * 100) : 0;
+  const roi = cost > 0 ? (profit / cost * 100) : null;
+  profitNode.textContent = yen(profit);
+  detailsNode.textContent = '利益率 ' + margin.toFixed(1) + '% / ROI ' + (roi === null ? '—' : roi.toFixed(1) + '%');
+  profitNode.style.color = profit >= 0 ? '#86efac' : '#fca5a5';
+}
+
+// UI events
+document.getElementById('searchBtn').addEventListener('click',()=>searchProduct(janInput.value));
+janInput.addEventListener('keydown',event=>{if(event.key==='Enter')searchProduct(janInput.value);});
+document.getElementById('start').addEventListener('click',startCamera);
+document.getElementById('stopCamera').addEventListener('click',()=>{stopCamera();toast('カメラを停止しました');});
+document.getElementById('backToScan').addEventListener('click',showScan);
+document.getElementById('navScan').addEventListener('click',showScan);
+document.getElementById('navResult').addEventListener('click',showResult);
+['salePrice','buyPrice','fee','shipping'].forEach(id=>document.getElementById(id).addEventListener('input',calculateProfit));
+document.getElementById('clearPrices').addEventListener('click',()=>{
+  ['salePrice','buyPrice','fee','shipping'].forEach(id=>document.getElementById(id).value='');
+  calculateProfit();
+});
+window.addEventListener('pagehide',stopCamera);
 </script>
 </body>
 </html>
